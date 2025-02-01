@@ -1,13 +1,16 @@
 use crate::dns_types::{DNSClass, DNSType};
 
 #[derive(Debug)]
-pub struct DNSQuestion {
+pub struct DNSAnswer {
     pub name: Vec<String>,
-    pub question_type: DNSType,
+    pub answer_type: DNSType,
     pub class: DNSClass,
+    pub ttl: u32,
+    pub rd_length: u16,
+    pub r_data: Vec<u8>,
 }
 
-impl DNSQuestion {
+impl DNSAnswer {
     pub fn encode(&self) -> Vec<u8> {
         let mut output: Vec<u8> = vec![];
 
@@ -17,8 +20,11 @@ impl DNSQuestion {
         }
         output.push(0); // Add null byte at the end of the labels
 
-        output.extend(self.question_type.encode());
+        output.extend(self.answer_type.encode());
         output.extend(self.class.encode());
+        output.extend(self.ttl.to_be_bytes());
+        output.extend(self.rd_length.to_be_bytes());
+        output.extend(self.r_data.iter());
 
         output
     }

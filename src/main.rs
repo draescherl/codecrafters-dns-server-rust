@@ -1,25 +1,39 @@
+mod answer;
+mod dns_types;
 mod header;
 mod message;
 mod question;
 
 use message::DNSMessage;
-use question::{DNSQuestion, QuestionClass, QuestionType};
 
+use crate::answer::DNSAnswer;
+use crate::dns_types::{DNSClass, DNSType};
 use crate::header::DNSHeader;
+use crate::question::DNSQuestion;
 use std::net::UdpSocket;
 
 fn main() {
-    let header = DNSHeader::new(1234, true, 9, false, false, false, false, 0, 0, 1, 0, 0, 0);
+    let header = DNSHeader::new(1234, true, 9, false, false, false, false, 0, 0, 1, 1, 0, 0);
 
     let question = DNSQuestion {
         name: vec!["codecrafters".to_string(), "io".to_string()],
-        qtype: QuestionType::A,
-        class: QuestionClass::IN,
+        question_type: DNSType::A,
+        class: DNSClass::IN,
+    };
+
+    let answer = DNSAnswer {
+        name: vec!["codecrafters".to_string(), "io".to_string()],
+        answer_type: DNSType::A,
+        class: DNSClass::IN,
+        ttl: 60,
+        rd_length: 4,
+        r_data: vec![8, 8, 8, 8],
     };
 
     let message = DNSMessage {
         header,
         questions: vec![question],
+        answers: vec![answer],
     };
 
     println!("Logs from your program will appear here!");

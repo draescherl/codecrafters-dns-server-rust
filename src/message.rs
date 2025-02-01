@@ -1,9 +1,11 @@
+use crate::answer::DNSAnswer;
 use crate::{header::DNSHeader, question::DNSQuestion};
 
 #[derive(Debug)]
 pub struct DNSMessage {
     pub header: DNSHeader,
     pub questions: Vec<DNSQuestion>,
+    pub answers: Vec<DNSAnswer>,
 }
 
 impl DNSMessage {
@@ -17,6 +19,12 @@ impl DNSMessage {
             let mut tmp = question.encode();
             output.append(&mut tmp);
         }
+
+        for answer in &self.answers {
+            let mut tmp = answer.encode();
+            output.append(&mut tmp);
+        }
+
         output
     }
 }
