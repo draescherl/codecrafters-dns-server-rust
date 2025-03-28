@@ -1,6 +1,6 @@
 use crate::dns_types::{DNSClass, DNSType};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DNSQuestion {
     pub name: Vec<String>,
     pub question_type: DNSType,

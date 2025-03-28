@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub enum DNSType {
     A,
@@ -29,7 +29,7 @@ impl DNSType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub enum DNSClass {
     IN,

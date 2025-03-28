@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DNSHeader {
     pub id: u16,
     pub flags: u16,
@@ -47,6 +47,30 @@ impl DNSHeader {
         header
     }
 
+    pub fn parse(input: &[u8]) -> DNSHeader {
+        let id = (input[0] as u16) << 8 | (input[1] as u16);
+        let qr = input[2] >> 7 != 0;
+        let opcode = (input[2] & 0x78) >> 3;
+        let aa = (input[2] & 0x04) >> 2 != 0;
+        let tc = (input[2] & 0x02) >> 1 != 0;
+        let rd = (input[2] & 0x01) != 0;
+
+        let ra = (input[3] & 0x80) >> 7 != 0;
+        let z = (input[3] & 0x70) >> 4;
+        let rcode = input[3] & 0x0f;
+
+        let qdcount = (input[4] as u16) << 8 | (input[5] as u16);
+        let ancount = (input[6] as u16) << 8 | (input[7] as u16);
+        let nscount = (input[8] as u16) << 8 | (input[9] as u16);
+        let arcount = (input[10] as u16) << 8 | (input[11] as u16);
+
+        let header = DNSHeader::new(
+            id, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount,
+        );
+        println!("{}", header);
+        header
+    }
+
     pub fn encode(&self) -> [u8; 12] {
         let mut output = [0u8; 12];
 
@@ -60,7 +84,7 @@ impl DNSHeader {
         output
     }
 
-    fn get_bit_at_pos(&self, pos: u32) -> bool {
+    pub fn get_bit_at_pos(&self, pos: u32) -> bool {
         let mask = 2u16.pow(pos);
         self.flags & mask == mask
     }
@@ -72,14 +96,14 @@ impl DNSHeader {
         };
     }
 
-    fn get_qr_flag(&self) -> bool {
+    pub fn get_qr_flag(&self) -> bool {
         self.get_bit_at_pos(15)
     }
     fn set_qr_flag(&mut self, value: bool) {
         self.set_bit_at_pos(15, value);
     }
 
-    fn get_opcode_flag(&self) -> u8 {
+    pub fn get_opcode_flag(&self) -> u8 {
         ((self.flags & 0x7800) >> 11) as u8
     }
     fn set_opcode_flag(&mut self, value: u8) {
@@ -89,35 +113,35 @@ impl DNSHeader {
         self.flags = (self.flags & 0x87ff) | (value as u16) << 11;
     }
 
-    fn get_aa_flag(&self) -> bool {
+    pub fn get_aa_flag(&self) -> bool {
         self.get_bit_at_pos(10)
     }
     fn set_aa_flag(&mut self, value: bool) {
         self.set_bit_at_pos(10, value);
     }
 
-    fn get_tc_flag(&self) -> bool {
+    pub fn get_tc_flag(&self) -> bool {
         self.get_bit_at_pos(9)
     }
     fn set_tc_flag(&mut self, value: bool) {
         self.set_bit_at_pos(9, value);
     }
 
-    fn get_rd_flag(&self) -> bool {
+    pub fn get_rd_flag(&self) -> bool {
         self.get_bit_at_pos(8)
     }
     fn set_rd_flag(&mut self, value: bool) {
         self.set_bit_at_pos(8, value);
     }
 
-    fn get_ra_flag(&self) -> bool {
+    pub fn get_ra_flag(&self) -> bool {
         self.get_bit_at_pos(7)
     }
     fn set_ra_flag(&mut self, value: bool) {
         self.set_bit_at_pos(7, value);
     }
 
-    fn get_z_flag(&self) -> u8 {
+    pub fn get_z_flag(&self) -> u8 {
         ((self.flags & 0x0070) >> 4) as u8
     }
     fn set_z_flag(&mut self, value: u8) {
@@ -127,7 +151,7 @@ impl DNSHeader {
         self.flags = (self.flags & 0xff8f) | (value as u16) << 4;
     }
 
-    fn get_rcode_flag(&self) -> u8 {
+    pub fn get_rcode_flag(&self) -> u8 {
         (self.flags & 0x000f) as u8
     }
     fn set_rcode_flag(&mut self, value: u8) {
