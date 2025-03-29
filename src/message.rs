@@ -1,5 +1,4 @@
 use crate::answer::DNSAnswer;
-use crate::dns_types::{DNSClass, DNSType};
 use crate::{header::DNSHeader, question::DNSQuestion};
 
 #[derive(Debug)]
@@ -31,29 +30,27 @@ impl DNSMessage {
 
     pub fn parse(input: &[u8]) -> DNSMessage {
         let header = DNSHeader::parse(&input[0..12]);
-        let question = DNSQuestion {
-            name: vec!["codecrafters".to_string(), "io".to_string()],
-            question_type: DNSType::A,
-            class: DNSClass::IN,
-        };
+        let num_questions = header.qd_count;
+        let mut buffer = &input[12..];
+        let mut questions: Vec<DNSQuestion> = vec![];
+        for _ in 0..num_questions {
+            let (question, consumed) = DNSQuestion::parse(buffer);
+            buffer = consumed;
+            questions.push(question);
+        }
 
         DNSMessage {
             header,
-            questions: vec![question],
+            questions,
             answers: vec![],
         }
     }
 
     pub fn reply(&self) -> DNSMessage {
-        let answer = DNSAnswer {
-            name: vec!["codecrafters".to_string(), "io".to_string()],
-            answer_type: DNSType::A,
-            class: DNSClass::IN,
-            ttl: 60,
-            rd_length: 4,
-            r_data: vec![8, 8, 8, 8],
-        };
-        let answers = vec![answer];
+        let mut answers: Vec<DNSAnswer> = vec![];
+        for question in &self.questions {
+            answers.push(question.reply());
+        }
 
         let rcode = if self.header.get_opcode_flag() == 0 {
             0

@@ -18,7 +18,6 @@ fn main() {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
                 let query_message = DNSMessage::parse(&buf);
-
                 let answer_message = query_message.reply();
                 let response = answer_message.encode();
                 udp_socket

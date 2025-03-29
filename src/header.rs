@@ -67,7 +67,8 @@ impl DNSHeader {
         let header = DNSHeader::new(
             id, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount,
         );
-        println!("{}", header);
+
+        //println!("{}", header);
         header
     }
 
