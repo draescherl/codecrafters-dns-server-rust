@@ -100,7 +100,7 @@ impl DNSHeader {
     pub fn get_qr_flag(&self) -> bool {
         self.get_bit_at_pos(15)
     }
-    fn set_qr_flag(&mut self, value: bool) {
+    pub fn set_qr_flag(&mut self, value: bool) {
         self.set_bit_at_pos(15, value);
     }
 

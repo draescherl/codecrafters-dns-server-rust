@@ -28,7 +28,38 @@ impl DNSMessage {
         output
     }
 
-    pub fn parse(input: &[u8]) -> DNSMessage {
+    pub fn split_questions(&self) -> Vec<Self> {
+        let mut items: Vec<Self> = vec![];
+        let header = DNSHeader {
+            qd_count: 1,
+            an_count: 0,
+            ..self.header
+        };
+        for question in &self.questions {
+            let message = Self {
+                header: header.clone(),
+                questions: vec![question.clone()],
+                answers: vec![],
+            };
+            items.push(message);
+        }
+        items
+    }
+
+    pub fn merge(reference_header: DNSHeader, questions: Vec<DNSQuestion>, answers: Vec<DNSAnswer>) -> Self {
+        let header = DNSHeader {
+            qd_count: questions.len() as u16,
+            an_count: answers.len() as u16,
+            ..reference_header
+        };
+        Self {
+            header,
+            questions,
+            answers,
+        }
+    }
+
+    pub fn parse(input: &[u8]) -> Self {
         let header = DNSHeader::parse(&input[0..12]);
         let num_questions = header.qd_count;
         let mut questions: Vec<DNSQuestion> = vec![];
@@ -39,14 +70,22 @@ impl DNSMessage {
             questions.push(question);
         }
 
-        DNSMessage {
+        let num_answers = header.an_count;
+        let mut answers: Vec<DNSAnswer> = vec![];
+        for _ in 0..num_answers {
+            let (answer, new_index) = DNSAnswer::parse(input, i);
+            i = new_index;
+            answers.push(answer);
+        }
+
+        Self {
             header,
             questions,
-            answers: vec![],
+            answers,
         }
     }
 
-    pub fn reply(&self) -> DNSMessage {
+    pub fn reply(&self) -> Self {
         let mut answers: Vec<DNSAnswer> = vec![];
         for question in &self.questions {
             answers.push(question.reply());
@@ -73,7 +112,7 @@ impl DNSMessage {
             0,
         );
 
-        DNSMessage {
+        Self {
             header: response_header,
             questions: self.questions.clone(),
             answers,
