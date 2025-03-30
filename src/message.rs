@@ -31,11 +31,11 @@ impl DNSMessage {
     pub fn parse(input: &[u8]) -> DNSMessage {
         let header = DNSHeader::parse(&input[0..12]);
         let num_questions = header.qd_count;
-        let mut buffer = &input[12..];
         let mut questions: Vec<DNSQuestion> = vec![];
+        let mut i = 12;
         for _ in 0..num_questions {
-            let (question, consumed) = DNSQuestion::parse(buffer);
-            buffer = consumed;
+            let (question, new_index) = DNSQuestion::parse(input, i);
+            i = new_index;
             questions.push(question);
         }
 

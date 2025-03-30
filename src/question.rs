@@ -24,28 +24,47 @@ impl DNSQuestion {
         output
     }
 
-    pub fn parse(buffer: &[u8]) -> (DNSQuestion, &[u8]) {
-        let mut i = 0;
-        let mut name: Vec<String> = Vec::new();
+    fn extract_name(buffer: &[u8], start_from: usize) -> (Vec<String>, usize) {
+        let mut i = start_from;
+        let mut name: Vec<String> = vec![];
         while i < buffer.len() && buffer[i] != 0 {
-            let length = buffer[i] as usize + 1;
-            let s: String = buffer[i + 1..i + length]
-                .iter()
-                .map(|&c| c as char)
-                .collect();
-            name.push(s);
-            i += length;
+            let length = buffer[i] as usize;
+
+            // 192 = 0b1100_0000. This is used to signal the presence of a pointer.
+            // Pointers are used to compress labels which were already encountered in a previous
+            // question
+            if length >= 192 {
+                let pointer = (((buffer[i] & 0b00111111) as u16) << 8 | (buffer[i+1] as u16)) as usize;
+                let (mut tmp, _) = DNSQuestion::extract_name(buffer, pointer);
+                // the second byte of the pointer will be skipped by the last +1 (in the return)
+                i += 1;
+                name.append(&mut tmp);
+                break
+            } else {
+                i += 1;
+                let label: String = buffer[i..i + length]
+                    .iter()
+                    .map(|&c| c as char)
+                    .collect();
+                i += length;
+                name.push(label);
+            };
         }
-        i += 1;
-        let question_type = DNSType::parse([buffer[i], buffer[i + 1]]).unwrap();
-        let class = DNSClass::parse([buffer[i + 2], buffer[i + 3]]).unwrap();
+
+        (name, i + 1)
+    }
+
+    pub fn parse(buffer: &[u8], current_index: usize) -> (DNSQuestion, usize) {
+        let (name, offset) = DNSQuestion::extract_name(buffer, current_index);
+        let question_type = DNSType::parse([buffer[offset], buffer[offset + 1]]).unwrap();
+        let class = DNSClass::parse([buffer[offset + 2], buffer[offset + 3]]).unwrap();
         (
             DNSQuestion {
                 name,
                 question_type,
                 class,
             },
-            &buffer[i + 3..],
+            offset + 4,
         )
     }
 
